@@ -1,0 +1,336 @@
+<title>Weather Key Layouts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: sticky control strip on top, then a grid of live 144px key previews, one per layout proposal. */
+:root {
+  --bg: #f3f4f6; --panel: #ffffff; --fg: #14161a; --muted: #5d6572; --line: #d9dde3; --accent: #1f6feb; --on-accent: #ffffff;
+  --font-ui: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num: "DM Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d0f12; --panel: #171a1f; --fg: #eceef1; --muted: #98a1ae; --line: #2a2f37; --accent: #5b9bff; --on-accent: #0d0f12; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0d0f12; --panel: #171a1f; --fg: #eceef1; --muted: #98a1ae; --line: #2a2f37; --accent: #5b9bff; --on-accent: #0d0f12; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+main { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+h1 { font-size: 26px; margin: 0; letter-spacing: -0.01em; }
+p.lead { margin: 6px 0 0; color: var(--muted); font-size: 15px; max-width: 62ch; line-height: 1.5; }
+.controls { display: flex; flex-direction: column; gap: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.row > b { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); width: 96px; font-weight: 600; }
+button.chip { font: inherit; font-size: 13px; color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+button.chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+button.chip:focus-visible, button.sw:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.sw { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); cursor: pointer; padding: 0; }
+button.sw[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card h2 { margin: 0; font-size: 16px; display: flex; gap: 8px; align-items: baseline; }
+.card h2 span { font-family: var(--font-num); color: var(--accent); }
+.card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+canvas { width: 144px; height: 144px; border-radius: 6px; align-self: center; image-rendering: auto; box-shadow: 0 0 0 1px var(--line); }
+.stage { background: #000; border-radius: 10px; padding: 18px; display: flex; justify-content: center; }
+.note { font-size: 13px; color: var(--muted); }
+@media (max-width: 480px) { .row > b { width: 100%; } }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&family=DM+Mono&display=swap">
+
+<main>
+  <header>
+    <h1>Weather key layouts</h1>
+    <p class="lead">Five ways to lay out the 144 px key, animated at the same 4 fps the plugin uses. Change the background and weather to see how each holds up, then tell me which letter to build.</p>
+  </header>
+
+  <section class="controls" aria-label="Preview controls">
+    <div class="row" id="bgRow"><b>Background</b></div>
+    <div class="row" id="wxRow"><b>Weather</b></div>
+    <div class="row" id="nightRow"><b>Time</b></div>
+    <div class="row" id="hourRow"><b>Local time</b>
+      <input id="hour" type="range" min="0" max="24" step="0.25" value="18" style="flex:1;min-width:140px;max-width:260px"><span id="hourv" style="font-family:var(--font-num)">18:00</span>
+      <div id="strip" title="Day / night background across 24 h (sunrise 06:00, sunset 18:00)" style="flex-basis:100%;height:22px;border-radius:6px;border:1px solid var(--line)"></div>
+    </div>
+    <div class="row"><b>Temp</b><input id="temp" type="range" min="-15" max="42" value="23" style="flex:1;min-width:140px;max-width:260px"><span id="tempv" style="font-family:var(--font-num)">23°C</span></div>
+  </section>
+
+  <section class="grid" id="grid"></section>
+
+  <header>
+    <h1 style="font-size:20px">Chance of rain on layout E</h1>
+    <p class="lead">A fresh set of five ways to add the rain probability (Open-Meteo gives it per hour). Use the slider to see each at any value; every card uses the weather, background and temperature chosen above.</p>
+  </header>
+  <section class="controls"><div class="row"><b>Rain chance</b><input id="rain" type="range" min="0" max="100" step="5" value="60" style="flex:1;min-width:140px;max-width:260px"><span id="rainv" style="font-family:var(--font-num)">60%</span></div></section>
+  <section class="grid" id="rainGrid"></section>
+  <p class="note">Black is the plugin's default background. "Scene" is the per-weather sky gradient. The last swatch is Day / night: drag Local time to see how the background follows sunrise (06:00) and sunset (18:00).</p>
+</main>
+
+<script>
+const S = 144, TAU = Math.PI * 2, FR = 12;
+const BGS = { black: '#000000', white: '#ffffff', navy: '#0b1a3a', slate: '#2b3340', forest: '#0f2a22', scene: null, daynight: null };
+// Day / night sky: gradient keyed to sunrise (06:00) and sunset (18:00), same keyframes as plugin/weather.js.
+const NIGHT = ['#05081a', '#111b3d'], TWILIGHT = ['#3b3a78', '#f08a4b'], DAYSKY = ['#2a7bd8', '#8fcfff'];
+const hx = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mixc = (a, b, f) => '#' + hx(a).map((v, i) => Math.round(v + (hx(b)[i] - v) * f).toString(16).padStart(2, '0')).join('');
+function skyAt(h) {
+  const now = h * 60, s = 360, e = 1080;
+  const keys = [[s - 60, NIGHT], [s, TWILIGHT], [s + 60, DAYSKY], [e - 60, DAYSKY], [e, TWILIGHT], [e + 60, NIGHT]];
+  if (now <= keys[0][0] || now >= keys[5][0]) return NIGHT;
+  for (let i = 0; i < 5; i++) { const [t0, c0] = keys[i], [t1, c1] = keys[i + 1]; if (now >= t0 && now <= t1) { const f = (now - t0) / (t1 - t0); return [mixc(c0[0], c1[0], f), mixc(c0[1], c1[1], f)]; } }
+  return DAYSKY;
+}
+const fmtHour = h => String(Math.floor(h)).padStart(2, '0') + ':' + String(Math.round((h % 1) * 60)).padStart(2, '0');
+const SKY = {
+  clear: ['#2882eb', '#87cdff'], partly: ['#377dd7', '#8cc3f0'], cloudy: ['#5f6978', '#a0aab6'], fog: ['#78808a', '#afb4ba'],
+  drizzle: ['#46556c', '#7d8ca0'], rain: ['#28344e', '#556480'], snow: ['#506487', '#aabed7'], thunder: ['#1c1634', '#463c64'],
+};
+const WX = ['clear', 'partly', 'cloudy', 'fog', 'drizzle', 'rain', 'snow', 'thunder'];
+const st = { bg: 'daynight', wx: 'rain', night: false, temp: 23, hour: 18, rain: 60 };
+const rnd = (i, k) => { const v = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return v - Math.floor(v); };
+
+const rgba = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+
+// Cloud: two rounded ends + a flat body + two puffs, filled with one vertical gradient.
+function cloud(c, cx, cy, s, pal, alpha) {
+  const g = c.createLinearGradient(0, cy - 33 * s, 0, cy + 20 * s);
+  g.addColorStop(0, pal[0]); g.addColorStop(1, pal[1]);
+  c.save(); c.globalAlpha = alpha ?? 1; c.fillStyle = g; c.beginPath();
+  c.rect(cx - 24 * s, cy - 4 * s, 48 * s, 24 * s);
+  [[-24, 8, 12], [24, 8, 12], [-14, -6, 15], [9, -13, 20]].forEach(([x, y, r]) => { c.moveTo(cx + (x + r) * s, cy + y * s); c.arc(cx + x * s, cy + y * s, r * s, 0, TAU); });
+  c.fill(); c.restore();
+}
+function cloudPal(k, night, light, flash) {
+  if (k === 'thunder') return flash ? ['#a29fc8', '#6f6c9c'] : ['#6f6c8e', '#3d3b5a'];
+  if (k === 'rain' || k === 'drizzle') return ['#a3afc2', '#6c7b93'];
+  if (k === 'cloudy') return light ? ['#cfd7e3', '#9aa8bd'] : ['#eef2f7', '#b6c2d4'];
+  if (night && (k === 'clear' || k === 'partly')) return ['#b3bdd6', '#7c88a8'];
+  return light ? ['#e4e9f1', '#aab7cc'] : ['#ffffff', '#cbd6e5'];
+}
+function glow(c, cx, cy, r, col, a) {
+  const g = c.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, rgba(col, a)); g.addColorStop(1, rgba(col, 0));
+  c.fillStyle = g; c.beginPath(); c.arc(cx, cy, r, 0, TAU); c.fill();
+}
+function sun(c, cx, cy, r, t) {
+  glow(c, cx, cy, r * 2.3, '#ffc933', .5);
+  c.strokeStyle = '#ffc933'; c.lineWidth = 4.5; c.lineCap = 'round';
+  const len = 8 + 3 * Math.sin(TAU * t);
+  for (let i = 0; i < 8; i++) { const a = (i * 45 + t * 45) * Math.PI / 180; c.beginPath(); c.moveTo(cx + Math.cos(a) * (r + 6), cy + Math.sin(a) * (r + 6)); c.lineTo(cx + Math.cos(a) * (r + 6 + len), cy + Math.sin(a) * (r + 6 + len)); c.stroke(); }
+  const g = c.createRadialGradient(cx - r * .3, cy - r * .3, 1, cx, cy, r);
+  g.addColorStop(0, '#fff3a6'); g.addColorStop(.55, '#ffcf33'); g.addColorStop(1, '#ffa61f');
+  c.fillStyle = g; c.beginPath(); c.arc(cx, cy, r, 0, TAU); c.fill();
+}
+function moon(c, cx, cy, r) {
+  glow(c, cx, cy, r * 2.2, '#dfe6ff', .35);
+  c.save(); c.beginPath(); c.arc(cx, cy, r, 0, TAU); c.clip();
+  const g = c.createLinearGradient(cx - r, cy - r, cx + r, cy + r); g.addColorStop(0, '#fffbe6'); g.addColorStop(1, '#d9d4b4');
+  c.fillStyle = g; c.beginPath(); c.rect(cx - r, cy - r, 2 * r, 2 * r); c.arc(cx + r * .5, cy - r * .2, r * .86, 0, TAU); c.fill('evenodd'); c.restore();
+}
+function stars(c, t, light) {
+  for (let i = 0; i < 9; i++) {
+    const x = 8 + rnd(i, 1) * 128, y = 6 + rnd(i, 2) * 56, tw = .5 + .5 * Math.sin(TAU * (t + rnd(i, 3))), s = 1.4 + 2.2 * tw;
+    c.fillStyle = rgba(light ? '#8a96aa' : '#ffffff', .35 + .65 * tw); c.beginPath();
+    for (let j = 0; j < 8; j++) { const rr = j % 2 ? s * .3 : s, a = j * Math.PI / 4; c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+    c.fill();
+  }
+}
+// Rain / drizzle / snow fall from behind the cloud base and fade in and out.
+function precip(c, kind, t, cx, baseY, light) {
+  const snowy = kind === 'snow', n = kind === 'drizzle' ? 7 : snowy ? 12 : 10;
+  for (let i = 0; i < n; i++) {
+    let x = cx - 27 + (i + .5) * (54 / n) + (rnd(i, 1) - .5) * 4;
+    const f = (rnd(i, 2) + t * (snowy ? 1 : 2 + i % 2)) % 1, y = baseY + f * (snowy ? 52 : 50), a = Math.min(1, f * 6) * Math.min(1, (1 - f) * 2.5);
+    if (snowy) { x += 4 * Math.sin(TAU * (t + rnd(i, 3))); c.fillStyle = rgba(light ? '#7f9bd0' : '#ffffff', a); c.beginPath(); c.arc(x, y, 1.8 + rnd(i, 4) * 1.4, 0, TAU); c.fill(); }
+    else { c.strokeStyle = rgba(light ? '#3b8be0' : '#8fd0ff', a); c.lineWidth = kind === 'drizzle' ? 2 : 2.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(x, y); c.lineTo(x - 2.5, y + (kind === 'drizzle' ? 7 : 11)); c.stroke(); }
+  }
+}
+function bolt(c, f) {
+  if (![3, 4, 8].includes(f)) return;
+  c.save(); c.shadowColor = 'rgba(255,225,90,.9)'; c.shadowBlur = 10; c.fillStyle = '#ffe45c'; c.beginPath();
+  [[76, 60], [60, 88], [71, 88], [64, 114], [88, 80], [76, 80], [86, 60]].forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.fill(); c.restore();
+}
+// Fog: a pale cloud over three drifting rounded bars.
+function fogBars(c, t, cx, y0, light) {
+  [58, 42, 52].forEach((w, i) => {
+    const x = cx + 7 * Math.sin(TAU * (t + i / 3)) * (i % 2 ? -1 : 1);
+    c.fillStyle = rgba(light ? '#aab6c8' : '#e3e9f1', .9); c.beginPath(); c.roundRect(x - w / 2, y0 + i * 13, w, 6.5, 3.25); c.fill();
+  });
+}
+
+// Draws the weather scene only (no background, no text) in 144x144 space.
+function scene(c, k, night, f, light) {
+  const t = f / FR, d = 3 * Math.sin(TAU * t), pal = cloudPal(k, night, light, k === 'thunder' && (f === 3 || f === 4));
+  if (k === 'clear') { if (night) { stars(c, t, light); moon(c, 72, 58, 24); } else sun(c, 72, 58, 22, t); }
+  else if (k === 'partly') { if (night) { stars(c, t, light); moon(c, 54, 48, 17); } else sun(c, 54, 48, 16, t); cloud(c, 84 + d * 2, 72, .95, pal); }
+  else if (k === 'cloudy') { cloud(c, 48 - d, 50, .7, cloudPal('cloudy', false, true), .8); cloud(c, 88 + d, 68, 1.05, pal); }
+  else if (k === 'fog') { cloud(c, 72 + d, 40, 1, pal); fogBars(c, t, 72, 70, light); }
+  else { precip(c, k === 'thunder' ? 'rain' : k, t, 72, 60, light); cloud(c, 72 + d, 44, 1.05, pal); if (k === 'thunder') bolt(c, f); }
+}
+
+function text(c, s, x, y, px, col, align, weight, shadow) {
+  c.font = `${weight || 700} ${px}px "Segoe UI", "DM Sans", system-ui, sans-serif`; c.textAlign = align; c.textBaseline = 'middle';
+  if (typeof shadow === 'string') { c.lineJoin = 'round'; c.lineWidth = 5; c.strokeStyle = shadow; c.strokeText(s, x, y); }
+  else if (shadow) { c.fillStyle = 'rgba(0,0,0,.45)'; c.fillText(s, x + 1.5, y + 1.5); }
+  c.fillStyle = col; c.fillText(s, x, y);
+}
+function fit(c, s, px, maxW, weight) { c.font = `${weight || 700} ${px}px "Segoe UI", "DM Sans", system-ui, sans-serif`; while (c.measureText(s).width > maxW && px > 10) { px -= 2; c.font = `${weight || 700} ${px}px "Segoe UI", "DM Sans", system-ui, sans-serif`; } return px; }
+
+// Water droplet (tip at y - s, round belly below), filled to `lvl` from the bottom, with an outline.
+function drop(c, x, y, s, col, lvl, outline) {
+  const path = () => { c.beginPath(); c.moveTo(x, y - s); c.bezierCurveTo(x + s * .9, y + s * .1, x + s * .8, y + s * 1.1, x, y + s * 1.1); c.bezierCurveTo(x - s * .8, y + s * 1.1, x - s * .9, y + s * .1, x, y - s); };
+  path(); c.lineJoin = 'round'; c.lineWidth = 4; c.strokeStyle = outline; c.stroke();
+  c.save(); path(); c.clip(); c.fillStyle = rgba('#ffffff', .22); c.fillRect(x - s, y - s, 2 * s, 2.2 * s);
+  const top = y + s * 1.1 - lvl * 2.1 * s; c.fillStyle = col; c.fillRect(x - s, top, 2 * s, y + 2 * s - top); c.restore();
+  path(); c.lineWidth = 1.5; c.strokeStyle = col; c.stroke();
+}
+
+// City on the left, droplet + percentage on the right; shrinks until both fit with a gap.
+function headerRow(c, city, P, tc, blue, lvl, halo) {
+  const mw = (s, p) => { c.font = `700 ${p}px "Segoe UI","DM Sans",system-ui,sans-serif`; return c.measureText(s).width; };
+  let px = 26; while (px > 13 && mw(city, px) + mw(P, px) + px * .9 + 14 > S - 16) px--;
+  text(c, city, 8, 21, px, tc, 'left', 700, halo);
+  text(c, P, S - 8, 21, px, tc, 'right', 700, halo);
+  drop(c, S - 8 - mw(P, px) - px * .5, 21 - px * .12, px * .38, blue, lvl, halo);
+}
+
+function draw(c, layout, f) {
+  const dn = st.bg === 'daynight';
+  const k = st.wx, night = (dn ? (st.hour < 6 || st.hour >= 18) : st.night) && (k === 'clear' || k === 'partly');
+  const isScene = st.bg === 'scene', light = st.bg === 'white';
+  const fg = light ? '#101318' : '#fff', sub = light ? '#4a5260' : 'rgba(255,255,255,.78)';
+  c.save(); c.clearRect(0, 0, S, S);
+  if (isScene || dn) { const pal = dn ? skyAt(st.hour) : night ? ['#080e28', '#233060'] : SKY[k]; const g = c.createLinearGradient(0, 0, 0, S); g.addColorStop(0, pal[0]); g.addColorStop(1, pal[1]); c.fillStyle = g; }
+  else c.fillStyle = BGS[st.bg];
+  c.fillRect(0, 0, S, S);
+  const T = st.temp + '°C', city = 'London';
+  const sc = (x, y, s) => { c.save(); c.beginPath(); c.rect(0, 0, S, S); c.clip(); c.translate(x, y); c.scale(s, s); scene(c, k, night, f, light); c.restore(); };
+  const scrim = () => { if (!isScene) return; const g = c.createLinearGradient(0, 84, 0, S); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.6)'); c.fillStyle = g; c.fillRect(0, 84, S, 60); };
+  const sh = isScene;
+  if (layout === 'A') { // Classic: full scene, city on top, temp at the bottom
+    sc(0, 0, 1); scrim();
+    text(c, T, S / 2, 120, fit(c, T, 44, S * .92), isScene ? '#fff' : fg, 'center', 700, sh);
+    text(c, city, S / 2, 14, fit(c, city, 16, S * .9), isScene ? '#fff' : sub, 'center', 700, sh);
+  } else if (layout === 'B') { // Big number: huge temp, small scene top-right
+    sc(58, -6, .62);
+    text(c, city, 10, 14, fit(c, city, 15, 70), isScene ? '#fff' : sub, 'left', 700, sh);
+    const px = fit(c, T, 66, S - 14); text(c, T, 8, 104, px, isScene ? '#fff' : fg, 'left', 700, sh);
+  } else if (layout === 'C') { // Split: scene on top half, temp and city stacked below
+    sc(0, -6, .86);
+    text(c, T, S / 2, 100, fit(c, T, 40, S * .9), isScene ? '#fff' : fg, 'center', 700, sh);
+    text(c, city, S / 2, 128, fit(c, city, 15, S * .86, 600), isScene ? 'rgba(255,255,255,.85)' : sub, 'center', 600, sh);
+  } else if (layout[0] === 'R') { // Rain-chance variants, all built on layout E
+    const halo = light ? 'rgba(255,255,255,.85)' : 'rgba(0,0,0,.7)', tc = isScene ? '#fff' : fg;
+    const blue = light ? '#1f6fd0' : '#6fc3ff', P = st.rain + '%', lvl = st.rain / 100;
+    c.save(); c.globalAlpha = .4; sc(-25, -15, 1.35); c.restore();
+    if (layout === 'R1') { // one header row: city on the left, droplet + percentage on the right, same weight
+      headerRow(c, city, P, tc, blue, lvl, halo);
+      text(c, T, 8, 98, fit(c, T, 70, S - 14), tc, 'left', 700, halo);
+    } else if (layout === 'R2') { // frame ring around the key fills clockwise; small pill with the number
+      const L = 4 * (S - 8 - 28) + TAU * 14;
+      c.save(); c.lineWidth = 5; c.lineCap = 'butt'; c.beginPath(); c.roundRect(4, 4, S - 8, S - 8, 14);
+      c.strokeStyle = rgba(light ? '#000000' : '#ffffff', .18); c.stroke();
+      c.setLineDash([lvl * L, L]); c.strokeStyle = blue; c.stroke(); c.restore();
+      text(c, city, S / 2, 26, fit(c, city, 28, S - 28), tc, 'center', 700, halo);
+      text(c, T, 14, 90, fit(c, T, 62, S - 28), tc, 'left', 700, halo);
+      c.fillStyle = light ? '#1f6fd0' : '#2a8be8'; c.beginPath(); c.roundRect(S - 52, S - 34, 40, 20, 10); c.fill();
+      text(c, P, S - 32, S - 24, 14, '#ffffff', 'center', 700, null);
+    } else if (layout === 'R3') { // tank on the right edge, number written along it
+      const x0 = S - 28, y0 = 44, w = 22, h = S - 44 - 8;
+      c.fillStyle = rgba('#000000', light ? .14 : .5); c.beginPath(); c.roundRect(x0, y0, w, h, 11); c.fill();
+      c.save(); c.beginPath(); c.roundRect(x0, y0, w, h, 11); c.clip();
+      const top = y0 + h * (1 - lvl); c.fillStyle = blue; c.beginPath(); c.moveTo(x0, y0 + h); c.lineTo(x0, top);
+      for (let x = 0; x <= w; x += 2) c.lineTo(x0 + x, top + 1.8 * Math.sin(TAU * (x / 22 + f / FR)));
+      c.lineTo(x0 + w, y0 + h); c.fill(); c.restore();
+      c.save(); c.translate(x0 + w / 2, y0 + h / 2); c.rotate(-Math.PI / 2); text(c, P, 0, 0, 15, '#ffffff', 'center', 700, 'rgba(0,30,80,.6)'); c.restore();
+      text(c, city, S / 2, 22, fit(c, city, 30, S - 12), tc, 'center', 700, halo);
+      text(c, T, 8, 98, fit(c, T, 60, S - 44), tc, 'left', 700, halo);
+    } else if (layout === 'R4') { // subtitle line under the city
+      text(c, city, S / 2, 18, fit(c, city, 26, S - 12), tc, 'center', 700, halo);
+      c.font = '700 17px "Segoe UI","DM Sans",system-ui,sans-serif';
+      const label = P + ' rain', lw = c.measureText(label).width + 17, x0 = S / 2 - lw / 2;
+      drop(c, x0 + 6, 38, 6.5, blue, lvl, halo); text(c, label, x0 + 17, 41, 17, blue, 'left', 700, halo);
+      text(c, T, 8, 100, fit(c, T, 60, S - 14), tc, 'left', 700, halo);
+    } else { // R5: the digits are the gauge, water fills them up to the chance of rain
+      headerRow(c, city, P, tc, blue, lvl, halo);
+      const px = fit(c, T, 70, S - 14), cy = 98; text(c, T, 8, cy, px, tc, 'left', 700, halo);
+      const dpr = c.canvas.width / S, off = document.createElement('canvas'); off.width = off.height = c.canvas.width;
+      const o = off.getContext('2d'); o.scale(dpr, dpr); text(o, T, 8, cy, px, '#ffffff', 'left', 700, null);
+      o.globalCompositeOperation = 'source-atop'; o.fillStyle = blue;
+      const base = cy + px * .37, top = base - lvl * px * .74; o.beginPath(); o.moveTo(0, S + 10); o.lineTo(0, top);
+      for (let x = 0; x <= S; x += 3) o.lineTo(x, top + 1.8 * Math.sin(TAU * (x / 48 + f / FR)));
+      o.lineTo(S, S + 10); o.fill(); c.drawImage(off, 0, 0, S, S);
+    }
+  } else if (layout === 'E') { // Backdrop: big number (B) over a large, translucent scene centred behind the text
+    const halo = light ? 'rgba(255,255,255,.85)' : 'rgba(0,0,0,.7)';
+    c.save(); c.globalAlpha = .4; sc(-25, -15, 1.35); c.restore();
+    text(c, city, S / 2, 22, fit(c, city, 30, S - 12), isScene ? '#fff' : fg, 'center', 700, halo);
+    const px = fit(c, T, 66, S - 14); text(c, T, 8, 104, px, isScene ? '#fff' : fg, 'left', 700, halo);
+  } else { // Corner: temp + city top-left, scene bleeds from the bottom-right
+    sc(34, 30, 1.05);
+    const px = fit(c, T, 40, 100); text(c, T, 10, 30, px, isScene ? '#fff' : fg, 'left', 700, sh);
+    text(c, city, 10, 58, fit(c, city, 14, 84, 600), isScene ? 'rgba(255,255,255,.85)' : sub, 'left', 600, sh);
+  }
+  c.restore();
+}
+
+const LAYOUTS = [
+  ['A', 'Classic', 'Current look. Scene fills the key, city on top, temperature at the bottom.'],
+  ['B', 'Big number', 'Temperature as large as the key allows; the scene shrinks into the top-right corner.'],
+  ['C', 'Split', 'Scene in the upper half, temperature and city stacked underneath. Easiest to read from a distance.'],
+  ['D', 'Corner', 'Temperature and city top-left, scene bleeding in from the bottom-right.'],
+  ['E', 'Backdrop', 'Layout B with the animation enlarged and centred behind the big temperature.'],
+];
+const RAIN = [
+  ['R1', 'Header row', 'City and rain chance share one top row at the same weight. The temperature gets the whole lower half.'],
+  ['R2', 'Frame ring', 'A ring around the edge of the key fills clockwise to the chance of rain. A small pill in the corner carries the number.'],
+  ['R3', 'Tank', 'A slim tank on the right edge fills with moving water; the number is written along it. Temperature narrows to fit.'],
+  ['R4', 'Subtitle', 'A blue "60% rain" line directly under the city, like a headline and subhead. No extra shapes.'],
+  ['R5', 'Water digits', 'The temperature digits fill with water up to the chance of rain, and the number sits in the header row.'],
+];
+const cvs = [];
+const grid = document.getElementById('grid');
+const rainGrid = document.getElementById('rainGrid');
+[...LAYOUTS, ...RAIN].forEach(([id, name, desc]) => {
+  const card = document.createElement('article'); card.className = 'card';
+  card.innerHTML = `<h2><span>${id}</span>${name}</h2>`;
+  const cv = document.createElement('canvas'); cv.width = cv.height = S; cv.style.width = cv.style.height = '144px';
+  const dpr = Math.min(window.devicePixelRatio || 1, 2); cv.width = cv.height = S * dpr; cv.getContext('2d').scale(dpr, dpr);
+  const p = document.createElement('p'); p.textContent = desc;
+  card.append(cv, p); (id[0] === 'R' ? rainGrid : grid).append(card); cvs.push([id, cv.getContext('2d')]);
+});
+
+function chips(rowId, items, key, label, isSwatch) {
+  const row = document.getElementById(rowId);
+  items.forEach(it => {
+    const b = document.createElement('button'); b.type = 'button';
+    if (isSwatch) { b.className = 'sw'; b.title = it; b.setAttribute('aria-label', it);
+      b.style.background = it === 'daynight' ? 'linear-gradient(90deg,#05081a,#3b3a78 30%,#2a7bd8 50%,#8fcfff 70%,#f08a4b 85%,#05081a)' : BGS[it] || 'linear-gradient(#2882eb,#87cdff)'; }
+    else { b.className = 'chip'; b.textContent = label ? label(it) : it; }
+    b.addEventListener('click', () => { st[key] = it; sync(); });
+    b.dataset.v = String(it); b.dataset.k = key; row.append(b);
+  });
+}
+chips('bgRow', Object.keys(BGS), 'bg', null, true);
+chips('wxRow', WX, 'wx');
+chips('nightRow', [false, true], 'night', v => v ? 'Night' : 'Day');
+document.getElementById('hour').addEventListener('input', e => { st.hour = +e.target.value; sync(); });
+document.getElementById('strip').style.background = 'linear-gradient(90deg,' + Array.from({ length: 25 }, (_, h) => skyAt(h)[0] + ' ' + (h / 24 * 100).toFixed(1) + '%').join(',') + ')';
+document.getElementById('rain').addEventListener('input', e => { st.rain = +e.target.value; document.getElementById('rainv').textContent = st.rain + '%'; });
+document.getElementById('temp').addEventListener('input', e => { st.temp = +e.target.value; sync(); });
+function sync() {
+  document.querySelectorAll('[data-k]').forEach(b => b.setAttribute('aria-pressed', String(st[b.dataset.k]) === b.dataset.v));
+  document.getElementById('tempv').textContent = st.temp + '°C';
+  document.getElementById('hourv').textContent = fmtHour(st.hour);
+  document.getElementById('hourRow').hidden = st.bg !== 'daynight';
+  document.getElementById('nightRow').hidden = st.bg === 'daynight';
+  document.querySelectorAll('canvas').forEach(c => c.style.background = '#000');
+}
+sync();
+
+let frame = 0, last = 0;
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function tick(ts) {
+  if (!still && ts - last >= 250) { last = ts; frame = (frame + 1) % FR; }
+  cvs.forEach(([id, c]) => draw(c, id, frame));
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>

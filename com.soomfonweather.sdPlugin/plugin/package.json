@@ -1,0 +1,10 @@
+{
+  "name": "soomfon-weather-plugin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "StreamDock plugin backend: fetches weather from Open-Meteo and renders animated key frames.",
+  "main": "index.js",
+  "dependencies": {
+    "ws": "^8.21.0"
+  }
+}

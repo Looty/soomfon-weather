@@ -1,0 +1,36 @@
+{
+  "Actions": [
+    {
+      "Icon": "images/icon",
+      "Name": "Weather",
+      "States": [
+        { "Image": "images/icon" }
+      ],
+      "Settings": {
+        "unit": "C",
+        "location": "London",
+        "background": "black"
+      },
+      "Controllers": ["Keypad", "Information"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "Tooltip": "Shows the current temperature with an animated scene for the current weather. Press the key to refresh now.",
+      "UUID": "com.soomfonweather.weather",
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    }
+  ],
+  "SDKVersion": 1,
+  "Author": "soomfon-weather contributors",
+  "Name": "Weather",
+  "Icon": "images/icon",
+  "CategoryIcon": "images/icon",
+  "Category": "Weather",
+  "Description": "Animated current weather on a key.",
+  "CodePathWin": "plugin/index.js",
+  "Nodejs": { "Version": "20" },
+  "Version": "1.0.0",
+  "OS": [
+    { "Platform": "windows", "MinimumVersion": "7" }
+  ],
+  "Software": { "MinimumVersion": "2.9" }
+}
