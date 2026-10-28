@@ -267,7 +267,7 @@ for ($frame = 0; $frame -lt $Frames; $frame++) {
   $ia.Dispose(); $layer.Dispose()
 
   # Big temperature (and city) on top, with a dark halo (light halo on white) so they never blend into the scene.
-  if ($Rain -ge 0) {
+  if ($Rain -gt 0) {
     # City as headline, blue "NN% rain" subtitle with a droplet that fills to the chance, temperature below.
     # City uses the Date & Time plugin's date size (26 pt = ~35 px), shrinking only for long names.
     if ($City) { Draw-Text $g $City 34.7 ($S / 2) 22 ($S * 0.92) $textCol $halo $true }
