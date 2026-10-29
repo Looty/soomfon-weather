@@ -1,13 +1,15 @@
 param(
   [Parameter(Mandatory=$true)][string]$Kind,   # clear partly cloudy fog drizzle rain snow thunder
   [int]$Night = 0,
-  [Parameter(Mandatory=$true)][string]$Temp,   # e.g. "23°C"
-  [string]$City = '',
+  [Parameter(Mandatory=$true)][string]$Temp,   # big text, e.g. "23°C" or "15°/9°"
+  [string]$City = '',                          # headline, e.g. the city, "Hi / Lo", "15:00", "Fri"
   [int]$Frames = 12,
   [string]$Bg = 'black',                       # black white navy slate forest scene daynight
   [string]$SkyTop = '#2a7bd8',                 # daynight only: gradient colors computed from local time
   [string]$SkyBottom = '#8fcfff',
-  [int]$Rain = -1                              # chance of rain 0..100; -1 hides the rain subtitle
+  [int]$Rain = -1,                             # chance of rain 0..100; -1 hides the rain subtitle
+  [int]$Dot = 0,                               # page indicator: this slide's index ...
+  [int]$Dots = 1                               # ... of this many slides (no dots for 1)
 )
 # Prints one base64 PNG per line: a seamless looping animation of $Frames frames.
 # The scene drawing mirrors layouts.html (the layout preview artifact); keep them in sync.
@@ -200,6 +202,7 @@ $family = New-Object System.Drawing.FontFamily 'Segoe UI'
 $textCol = if ($light) { Hx '#101318' } else { Hx '#ffffff' }
 $halo = if ($light) { Col 217 255 255 255 } else { Col 178 0 0 0 }
 
+$lift = if ($Dots -gt 1) { 4 } else { 0 }   # room for the page dots under the big text
 $rainBlue = if ($light) { Hx '#1f6fd0' } else { Hx '#6fc3ff' }
 
 function Text-Width($g, [string]$text, [double]$px) {
@@ -276,10 +279,21 @@ for ($frame = 0; $frame -lt $Frames; $frame++) {
     $x0 = $S / 2 - ($lw + 30) / 2
     Draw-Drop $g ($x0 + 11) 65 11 $rainBlue ($Rain / 100) $halo
     Draw-Text $g $label 34 ($x0 + 30) 68 ($S - 40) $rainBlue $halo
-    Draw-Text $g $Temp 56 8 113 ($S - 14) $textCol $halo
+    Draw-Text $g $Temp 56 8 (113 - $lift) ($S - 14) $textCol $halo
   } else {
-    Draw-Text $g $Temp 66 8 104 ($S - 14) $textCol $halo
+    Draw-Text $g $Temp 66 8 (104 - $lift) ($S - 14) $textCol $halo
     if ($City) { Draw-Text $g $City 30 ($S / 2) 22 ($S - 12) $textCol $halo $true }
+  }
+
+  # Page dots along the bottom edge: the current slide solid, the others faint.
+  if ($Dots -gt 1) {
+    $step = 9; $x0 = $S / 2 - ($Dots - 1) * $step / 2
+    for ($i = 0; $i -lt $Dots; $i++) {
+      $a = if ($i -eq $Dot) { 255 } else { 90 }
+      $dc = if ($light) { Col $a 16 19 24 } else { Col $a 255 255 255 }
+      $hb = Brush $halo; $g.FillEllipse($hb, [single]($x0 + $i * $step - 3.5), [single](139 - 3.5), [single]7, [single]7); $hb.Dispose()
+      $b = Brush $dc; $g.FillEllipse($b, [single]($x0 + $i * $step - 2.5), [single](139 - 2.5), [single]5, [single]5); $b.Dispose()
+    }
   }
 
   $ms = New-Object System.IO.MemoryStream

@@ -9,12 +9,13 @@
       "Settings": {
         "unit": "C",
         "location": "London",
-        "background": "black"
+        "background": "black",
+        "slides": "mix"
       },
       "Controllers": ["Keypad", "Information"],
       "UserTitleEnabled": false,
       "SupportedInMultiActions": false,
-      "Tooltip": "Shows the current temperature with an animated scene for the current weather. Press the key to refresh now.",
+      "Tooltip": "Shows the current temperature with an animated scene for the current weather, rotating through forecast slides every minute. Press the key for the next slide.",
       "UUID": "com.soomfonweather.weather",
       "PropertyInspectorPath": "propertyInspector/index.html"
     }

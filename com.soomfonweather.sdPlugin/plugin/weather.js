@@ -43,23 +43,64 @@ function skyColors(nowIso, sunriseIso, sunsetIso, isDay) {
   return DAY;
 }
 
-// -> { temp (rounded, in the requested unit), kind, night, sky: [top, bottom] }
-async function current(place, unit) {
+const pct = (v) => (v != null ? Math.round(v) : -1); // chance of rain; -1 if the API has none
+
+// Temperatures are rounded and in the requested unit; precipitation is in mm (in for F).
+// -> {
+//   now:   { temp, feels, kind, night, sky: [top, bottom], rain },
+//   today: { hi, lo, kind, rainLeft },            rainLeft: precipitation from this hour to midnight
+//   hours: [{ time: 'HH:MM', temp, kind, night, sky, rain }],   +3h, +6h, +9h
+//   days:  [{ date: 'YYYY-MM-DD', hi, lo, kind, rain }],        the next 3 days
+// }
+async function forecast(place, unit) {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}` +
-    `&current=temperature_2m,weather_code,is_day&hourly=precipitation_probability&daily=sunrise,sunset&forecast_days=1&timezone=auto` +
-    `&temperature_unit=${unit === 'F' ? 'fahrenheit' : 'celsius'}`;
-  const j = await getJson(url), c = j.current;
-  // Chance of rain for the current local hour; -1 if the API has none.
-  const hi = j.hourly?.time?.indexOf(c.time.slice(0, 13) + ':00') ?? -1;
-  const rain = hi >= 0 && j.hourly.precipitation_probability[hi] != null ? Math.round(j.hourly.precipitation_probability[hi]) : -1;
+    `&current=temperature_2m,apparent_temperature,weather_code,is_day` +
+    `&hourly=temperature_2m,weather_code,is_day,precipitation_probability,precipitation` +
+    `&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max` +
+    `&forecast_days=4&timezone=auto` +
+    `&temperature_unit=${unit === 'F' ? 'fahrenheit' : 'celsius'}&precipitation_unit=${unit === 'F' ? 'inch' : 'mm'}`;
+  const j = await getJson(url), c = j.current, h = j.hourly, d = j.daily;
+  const dayOf = (iso) => d.time.indexOf(iso.slice(0, 10));
+  const hi = h.time.indexOf(c.time.slice(0, 13) + ':00');
+
+  let rainLeft = 0;
+  if (hi >= 0) for (let i = hi; i < h.time.length && h.time[i].slice(0, 10) === d.time[0]; i++) rainLeft += h.precipitation[i] || 0;
+
+  const hours = [];
+  for (const k of [3, 6, 9]) {
+    const i = hi + k;
+    if (hi < 0 || i >= h.time.length) break;
+    const di = dayOf(h.time[i]);
+    hours.push({
+      time: h.time[i].slice(11, 16),
+      temp: Math.round(h.temperature_2m[i]),
+      kind: kindFor(h.weather_code[i]),
+      night: h.is_day[i] === 0,
+      sky: skyColors(h.time[i], d.sunrise?.[di], d.sunset?.[di], h.is_day[i] === 1),
+      rain: pct(h.precipitation_probability[i]),
+    });
+  }
+
   return {
-    rain,
-    temp: Math.round(c.temperature_2m),
-    kind: kindFor(c.weather_code),
-    night: c.is_day === 0,
-    sky: skyColors(c.time, j.daily?.sunrise?.[0], j.daily?.sunset?.[0], c.is_day === 1),
+    now: {
+      temp: Math.round(c.temperature_2m),
+      feels: Math.round(c.apparent_temperature),
+      kind: kindFor(c.weather_code),
+      night: c.is_day === 0,
+      sky: skyColors(c.time, d.sunrise?.[0], d.sunset?.[0], c.is_day === 1),
+      rain: hi >= 0 ? pct(h.precipitation_probability[hi]) : -1,
+    },
+    today: { hi: Math.round(d.temperature_2m_max[0]), lo: Math.round(d.temperature_2m_min[0]), kind: kindFor(d.weather_code[0]), rainLeft },
+    hours,
+    days: d.time.slice(1, 4).map((date, k) => ({
+      date,
+      hi: Math.round(d.temperature_2m_max[k + 1]),
+      lo: Math.round(d.temperature_2m_min[k + 1]),
+      kind: kindFor(d.weather_code[k + 1]),
+      rain: pct(d.precipitation_probability_max[k + 1]),
+    })),
   };
 }
 
-module.exports = { geocode, current, kindFor, skyColors };
+module.exports = { geocode, forecast, kindFor, skyColors, DAY };

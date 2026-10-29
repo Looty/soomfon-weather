@@ -1,9 +1,10 @@
 // Standard Elgato-style PI entry point (same as the sibling soomfon-* plugins).
 
-const DEFAULTS = { unit: 'C', location: 'London', background: 'black' };
+const DEFAULTS = { unit: 'C', location: 'London', background: 'black', slides: 'mix' };
 
 const $unit = document.getElementById('unit');
 const $background = document.getElementById('background');
+const $slides = document.getElementById('slides');
 const $location = document.getElementById('location');
 
 let ws = null;
@@ -14,6 +15,7 @@ function applySettings(newSettings) {
   settings = { ...DEFAULTS, ...newSettings };
   $unit.value = settings.unit;
   $background.value = settings.background;
+  $slides.value = settings.slides;
   if (document.activeElement !== $location) $location.value = settings.location;
 }
 
@@ -29,6 +31,11 @@ $unit.addEventListener('change', () => {
 
 $background.addEventListener('change', () => {
   settings.background = $background.value;
+  save();
+});
+
+$slides.addEventListener('change', () => {
+  settings.slides = $slides.value;
   save();
 });
 
