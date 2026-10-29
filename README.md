@@ -2,7 +2,7 @@
 
 A tiny StreamDock plugin for Soomfon Stream Controllers: current temperature plus an animated scene (sun, moon and stars, clouds, fog, drizzle, rain, snow, thunder) on a key. Data from [Open-Meteo](https://open-meteo.com) (no API key).
 
-![Animated weather keys: clear, night, partly cloudy, rain, snow, thunder](docs/keys.gif)
+![Animated weather keys (clear, night, partly cloudy, rain, snow, thunder) rotating through now, hi/lo, +3h and tomorrow](docs/keys.gif)
 
 Options (per key, in the Property Inspector):
 - **Unit**: Celsius (default) or Fahrenheit
