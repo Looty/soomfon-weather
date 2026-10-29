@@ -16,6 +16,10 @@ Options (per key, in the Property Inspector):
 
   Slides with nothing to say are skipped: "feels like" only when it is 3°C (5°F) off the real temperature, "rain today" only when rain is expected. Dots along the bottom show which slide is up.
 
+  ![London on each slide set: Mix, Today, Hours and Days](docs/slides.png)
+
+  London on a dry day: Today shows just two slides, because feels-like is close to the real temperature and no rain is expected.
+
 <img src="docs/settings.png" alt="Property Inspector settings: unit, location, background" width="356">
 
 Press the key to show the next slide (the 1-minute timer starts over). Weather refreshes every 15 minutes.
